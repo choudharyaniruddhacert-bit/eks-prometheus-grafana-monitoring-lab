@@ -1,0 +1,51 @@
+prometheus:
+  prometheusSpec:
+    # Read ALL ServiceMonitors / PodMonitors / PrometheusRules,
+    # not only those labelled release=<helm-release-name>
+    serviceMonitorSelectorNilUsesHelmValues: false
+    podMonitorSelectorNilUsesHelmValues: false
+    ruleSelectorNilUsesHelmValues: false
+    # ...in every namespace
+    serviceMonitorNamespaceSelector: {}
+    ruleNamespaceSelector: {}
+    retention: 7d
+    resources:
+      requests:
+        cpu: 200m
+        memory: 1Gi
+      limits:
+        memory: 2Gi
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: gp3
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 20Gi
+
+alertmanager:
+  alertmanagerSpec:
+    storage:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: gp3
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 5Gi
+
+grafana:
+  adminPassword: admin123   # lab only - use a Secret / SSO in production
+  persistence:
+    enabled: true
+    storageClassName: gp3
+    size: 5Gi
+
+# EKS hides the control plane: these cannot be scraped and would raise false alerts
+kubeControllerManager:
+  enabled: false
+kubeScheduler:
+  enabled: false
+kubeEtcd:
+  enabled: false

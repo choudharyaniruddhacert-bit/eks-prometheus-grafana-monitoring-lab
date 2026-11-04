@@ -1,0 +1,40 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: orders-app-alerts
+  namespace: demo
+  labels:
+    release: monitoring
+spec:
+  groups:
+    - name: orders-app
+      rules:
+        - alert: HighOrderFailureRate
+          expr: |
+            sum(rate(orders_total{status="failed"}[2m]))
+              /
+            sum(rate(orders_total[2m])) > 0.10
+          for: 2m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Order failure rate above 10%"
+            description: "Failed orders are {{ $value | humanizePercentage }} of total for the last 2 minutes."
+
+        - alert: OrdersAppDown
+          expr: up{namespace="demo", job="orders-app"} == 0
+          for: 1m
+          labels:
+            severity: critical
+          annotations:
+            summary: "orders-app target is down"
+            description: "Prometheus cannot scrape {{ $labels.pod }}."
+
+        - alert: OrdersAppMissing
+          expr: absent(up{namespace="demo", job="orders-app"})
+          for: 2m
+          labels:
+            severity: warning
+          annotations:
+            summary: "orders-app has no scrape target"
+            description: "No orders-app target is discovered - check the ServiceMonitor labels and selectors."
